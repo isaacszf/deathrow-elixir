@@ -1,35 +1,34 @@
 defmodule Inmates do
-  def get_inmate_info_by_name(inmate_name) do
+  def get_inmate_info_by_name(url) do
+    inmate_name = get_single_inmate_name(url)
+
     info_table =
-      "https://www.tdcj.texas.gov/death_row/dr_info/#{inmate_name}last.html"
-      |> Utils.get_page()
-      |> Utils.parse_doc()
-      |> Floki.find("div#content_right p")
-      |> Floki.raw_html()
-      |> String.replace(
-        ["<br/>", "<span class=\"italic\">", "</span>", "\r\n", "\r", "\n"],
-        ""
+      get_inmate_info_table(
+        "https://www.tdcj.texas.gov/death_row/dr_info/#{inmate_name}last.html"
       )
-      |> Utils.parse_doc()
 
-    # Five is the number of lines which is above the statement
-    # (which contains name and date)
-    # So to get the number of sentences, we need to decrease five by the
-    # width of the table
-    {date, name_and_number, last_statement} = parse_info(info_table, 5 - length(info_table))
+    if Enum.empty?(info_table) do
+      get_inmate_info_by_name(url)
+    else
+      # Five is the number of lines which is above the statement
+      # (which contains name and date)
+      # So to get the number of sentences, we need to decrease five by the
+      # width of the table
+      {date, name_and_number, last_statement} = parse_info(info_table, 5 - length(info_table))
 
-    %{
-      date_of_execution: date |> String.trim(),
-      full_name:
-        name_and_number
-        |> String.split("#")
-        |> hd()
-        |> String.trim(),
-      last_statement: last_statement |> String.trim()
-    }
+      %{
+        date_of_execution: date |> String.trim(),
+        full_name:
+          name_and_number
+          |> String.split("#")
+          |> hd()
+          |> String.trim(),
+        last_statement: last_statement |> String.trim()
+      }
+    end
   end
 
-  def get_single_inmate_name(url) do
+  defp get_single_inmate_name(url) do
     inmates_list = get_all(url)
 
     inmates_list
@@ -48,6 +47,19 @@ defmodule Inmates do
     |> Stream.map(&String.replace(&1, ["dr_info/", ".html", "last", "/death_row/"], ""))
     |> Stream.filter(&(&1 != "no__statement"))
     |> Stream.map(&(String.split(&1, "9") |> hd()))
+  end
+
+  defp get_inmate_info_table(inmate_url) do
+    inmate_url
+    |> Utils.get_page()
+    |> Utils.parse_doc()
+    |> Floki.find("div#content_right p")
+    |> Floki.raw_html()
+    |> String.replace(
+      ["<br/>", "<span class=\"italic\">", "</span>", "\r\n", "\r", "\n"],
+      ""
+    )
+    |> Utils.parse_doc()
   end
 
   defp parse_info(inmates_info_table, range) do
