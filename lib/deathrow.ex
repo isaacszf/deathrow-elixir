@@ -2,15 +2,6 @@ defmodule Deathrow do
   @url "https://www.tdcj.texas.gov/death_row/dr_executed_offenders.html"
 
   def generate, do: Inmates.get_inmate_info_by_name(@url)
-
-  def loop do
-    result = generate()
-
-    IO.inspect(result)
-    :timer.sleep(1)
-
-    loop()
-  end
 end
 
 defmodule Deathrow.CLI do
