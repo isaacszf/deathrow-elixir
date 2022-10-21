@@ -1,4 +1,6 @@
 defmodule Inmates do
+  defstruct full_name: "", date_of_execution: "", last_statement: ""
+
   def get_inmate_info_by_name(url) do
     inmate_name = get_single_inmate_name(url)
 
@@ -16,7 +18,7 @@ defmodule Inmates do
       # width of the table
       {date, name_and_number, last_statement} = parse_info(info_table, 5 - length(info_table))
 
-      %{
+      %Inmates{
         date_of_execution: date |> String.trim(),
         full_name:
           name_and_number
